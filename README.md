@@ -1,15 +1,7 @@
-# EpubTTS
+<img src="assets/logo.png" alt="EpubTTS Logo" width="150">
+<br><br>
 
-```
-  ______           _     _______ _______ _____
- |  ____|         | |   |__   __|__   __/ ____|
- | |__   _ __  _   _| |__    | |     | | | (___
- |  __| | '_ \| | | | '_ \   | |     | |  \___ \
- | |____| |_) | |_| | |_) |  | |     | |  ____) |
- |______| .__/ \__,_|_.__/   |_|     |_| |_____/
-        | |
-        |_|
-```
+# EpubTTS
 
 Convert EPUB books to high-quality audio using Kyutai TTS models. Cross-platform support with optimized backends for macOS Apple Silicon (MLX) and Windows/Linux (PyTorch).
 
