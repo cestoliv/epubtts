@@ -1,0 +1,28 @@
+[project]
+name = "kyutai-epub"
+version = "0.1.0"
+description = "EPUB to audio converter using Kyutai TTS"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "beautifulsoup4>=4.11.0",
+    "ebooklib>=0.18",
+    "inquirer>=3.1.0",
+    "moshi>=0.2.10",
+    "numpy>=1.21.0",
+    "rich>=13.0.0",
+    "sounddevice>=0.5.0",
+    "soundfile>=0.12.1",
+]
+
+[dependency-groups]
+mlx = [
+    "moshi-mlx>=0.2.9",
+    "sentencepiece>=0.1.99",
+    "sphn>=0.1.0",
+]
+pytorch = [
+    "torch>=2.0.0",
+    "moshi>=0.2.10",
+    "sphn>=0.1.0",
+]
