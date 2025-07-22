@@ -114,6 +114,13 @@ Run the test suite:
 uv run pytest tests/ -v
 ```
 
+## 🏃‍♂️ Benchmarking
+
+Find your optimal chunk size with the benchmark script:
+```bash
+uv run python benchmark_chunks.py
+```
+
 ## 🔧 Troubleshooting
 
 ### Common Issues
@@ -131,6 +138,11 @@ uv run python main.py book.epub
 **Memory Issues:**
 - Use quantization: `--quantize 8` (MLX)
 - Reduce chunk size: `--max-chunk-words 200`
+
+**Google Colab/Jupyter Issues:**
+- Chapter selection automatically switches to simple input mode
+- Enter chapter numbers like: `1,3,5-7,10` or leave empty for all chapters
+- No interactive checkboxes needed - just type your selection
 
 **Audio Quality Problems:**
 - Try different voices from [Kyutai TTS Demo](https://kyutai.org/next/tts)

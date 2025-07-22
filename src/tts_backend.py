@@ -152,6 +152,19 @@ class PyTorchBackend:
     def __init__(self):
         self.tts_model = None
 
+    def __del__(self):
+        """Cleanup method to ensure proper resource deallocation."""
+        try:
+            if hasattr(self, 'tts_model') and self.tts_model is not None:
+                self.tts_model = None
+            import torch
+            import gc
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            gc.collect()
+        except (ImportError, AttributeError):
+            pass  # Ignore errors during cleanup
+
     def load_model(self, hf_repo, voice_repo, quantize=None, device="auto"):
         """Load the PyTorch TTS model."""
         import torch
@@ -184,31 +197,59 @@ class PyTorchBackend:
         """Process a single chunk of text with PyTorch model."""
 
         import torch
+        import gc
 
-        # Prepare the text for TTS
-        entries = self.tts_model.prepare_script([chunk], padding_between=1)
-        voice_path = self.tts_model.get_voice_path(voice)
+        try:
+            # Prepare the text for TTS
+            entries = self.tts_model.prepare_script([chunk], padding_between=1)
+            voice_path = self.tts_model.get_voice_path(voice)
 
-        # CFG coef goes here because the model was trained with CFG distillation,
-        # so it's not _actually_ doing CFG at inference time.
-        condition_attributes = self.tts_model.make_condition_attributes(
-            [voice_path], cfg_coef=2.0
-        )
+            # CFG coef goes here because the model was trained with CFG distillation,
+            # so it's not _actually_ doing CFG at inference time.
+            condition_attributes = self.tts_model.make_condition_attributes(
+                [voice_path], cfg_coef=2.0
+            )
 
-        # Generate audio
-        result = self.tts_model.generate([entries], [condition_attributes])
+            # Generate audio
+            result = self.tts_model.generate([entries], [condition_attributes])
 
-        # Decode frames
-        with self.tts_model.mimi.streaming(1), torch.no_grad():
+            # Decode frames with proper memory management
             pcms = []
-            for frame in result.frames[self.tts_model.delay_steps :]:
-                pcm = self.tts_model.mimi.decode(frame[:, 1:, :]).cpu().numpy()
-                pcms.append(np.clip(pcm[0, 0], -1, 1))
+            try:
+                with self.tts_model.mimi.streaming(1), torch.no_grad():
+                    for frame in result.frames[self.tts_model.delay_steps :]:
+                        # Process frame and immediately move to CPU/numpy
+                        pcm_tensor = self.tts_model.mimi.decode(frame[:, 1:, :])
+                        pcm_numpy = np.clip(pcm_tensor.cpu().numpy()[0, 0], -1, 1)
+                        pcms.append(pcm_numpy)
+                        
+                        # Clean up GPU memory for this frame
+                        del pcm_tensor
+                        if torch.cuda.is_available():
+                            torch.cuda.empty_cache()
 
-            if pcms:
-                return np.concatenate(pcms, axis=-1)
-            else:
-                return np.array([])
+                # Concatenate results
+                if pcms:
+                    audio_result = np.concatenate(pcms, axis=-1)
+                else:
+                    audio_result = np.array([])
+                    
+            finally:
+                # Cleanup PCM list and result
+                pcms.clear()
+                del result
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+                gc.collect()
+                
+            return audio_result
+            
+        except Exception as e:
+            # Ensure cleanup on error
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            gc.collect()
+            raise e
 
     @property
     def sample_rate(self):
@@ -268,11 +309,26 @@ class TTSBackend:
 
     def process_chunk(self, chunk, voice):
         """Process chunk with a fresh backend instance."""
+        import gc
+        
         backend = self._create_backend()
         try:
             return backend.process_chunk(chunk, voice)
         finally:
+            # Explicit cleanup of backend
+            if hasattr(backend, 'tts_model') and backend.tts_model is not None:
+                # Clear model references
+                backend.tts_model = None
             del backend
+            
+            # Force garbage collection and GPU memory cleanup
+            gc.collect()
+            try:
+                import torch
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+            except ImportError:
+                pass  # PyTorch not available (MLX backend)
 
     @property
     def sample_rate(self):
