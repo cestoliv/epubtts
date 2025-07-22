@@ -37,13 +37,17 @@ def get_system_info():
     # Check for GPU - try MLX first (Apple Silicon), then PyTorch
     try:
         import mlx.core
+
         info["gpu"] = "Apple Silicon (MLX)"
     except ImportError:
         try:
             import torch
+
             if torch.cuda.is_available():
                 info["gpu"] = torch.cuda.get_device_name(0)
-                info["gpu_memory"] = torch.cuda.get_device_properties(0).total_memory / (1024**3)  # GB
+                info["gpu_memory"] = torch.cuda.get_device_properties(
+                    0
+                ).total_memory / (1024**3)  # GB
             else:
                 info["gpu"] = "CPU only"
         except ImportError:
@@ -158,17 +162,17 @@ def benchmark_chunk_size(chunk_words, voice, max_attempts=3):
             class MemoryMonitor:
                 def __init__(self):
                     self.peak = memory_before
-                
+
                 def update(self):
                     current = measure_memory_usage()
                     if current > self.peak:
                         self.peak = current
 
             monitor = MemoryMonitor()
-            
+
             # Start processing
             audio_data = backend.process_chunk(test_text, voice)
-            
+
             # Update memory peak one final time
             monitor.update()
             peak_memory = monitor.peak
@@ -214,21 +218,23 @@ def benchmark_chunk_size(chunk_words, voice, max_attempts=3):
             if backend is not None:
                 # Explicitly delete backend to unload model
                 del backend
-            
+
             # Force garbage collection
             gc.collect()
-            
+
             # GPU memory cleanup if available
             try:
                 import torch
+
                 if torch.cuda.is_available():
                     torch.cuda.empty_cache()
             except ImportError:
                 pass
-            
+
             # MLX memory cleanup if available
             try:
                 import mlx.core as mx
+
                 mx.clear_cache()
             except ImportError:
                 pass
@@ -319,7 +325,6 @@ def run_benchmark():
                     }
                 )
 
-
                 console.print(
                     f"  ✅ Success rate: {len(successful_runs)}/{len(results)}"
                 )
@@ -395,7 +400,6 @@ def run_benchmark():
             )
 
     console.print(results_table)
-
 
     # Save results
     timestamp = time.strftime("%Y%m%d_%H%M%S")

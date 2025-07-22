@@ -23,7 +23,7 @@ def chunk_text(text, max_chunk_words):
         if sentence_word_count > max_chunk_words:
             # If we have a current chunk, finish it first
             if current_chunk:
-                chunks.append(' '.join(current_chunk))
+                chunks.append(" ".join(current_chunk))
                 current_chunk = []
                 current_size = 0
 
@@ -34,7 +34,7 @@ def chunk_text(text, max_chunk_words):
         # If adding this sentence would exceed the limit and we have content
         if current_size + sentence_word_count > max_chunk_words and current_chunk:
             # Finish current chunk and start a new one
-            chunks.append(' '.join(current_chunk))
+            chunks.append(" ".join(current_chunk))
             current_chunk = [sentence]
             current_size = sentence_word_count
         else:
@@ -44,9 +44,10 @@ def chunk_text(text, max_chunk_words):
 
     # Add the last chunk if it has content
     if current_chunk:
-        chunks.append(' '.join(current_chunk))
+        chunks.append(" ".join(current_chunk))
 
     return chunks
+
 
 def extract_sentences(text):
     """Extract individual sentences from text."""
@@ -54,7 +55,7 @@ def extract_sentences(text):
     sentences = []
 
     # Simple sentence splitting - can be improved with more sophisticated logic
-    parts = text.replace('\n', ' ').split('.')
+    parts = text.replace("\n", " ").split(".")
 
     for part in parts:
         part = part.strip()
@@ -62,7 +63,7 @@ def extract_sentences(text):
             continue
 
         # Add the period back
-        sentence = part + '.'
+        sentence = part + "."
 
         # Skip very short fragments (likely abbreviations)
         if len(sentence.split()) >= 3:
